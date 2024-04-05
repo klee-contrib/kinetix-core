@@ -101,7 +101,7 @@ internal class WorksheetBuilder<T> : IWorksheetBuilder<T>
                 }
                 else
                 {
-                    cell.SetValue(value);
+                    cell.SetValue(XLCellValue.FromObject(value));
                 }
 
                 if (dateFormat != null)

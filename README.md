@@ -1,4 +1,4 @@
-# Kinetix (pour .NET 6)
+# Kinetix (pour .NET 8)
 
 Kinetix est un ensemble de modules destiné à enrichir une application .NET de fonctionnalités transverses pour simplifier certaines opérations courantes. Ces modules sont relativement indépendants et peuvent donc être intégrés unitairement.
 

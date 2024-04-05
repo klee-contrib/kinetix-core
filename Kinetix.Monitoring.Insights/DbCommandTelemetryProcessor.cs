@@ -32,11 +32,11 @@ public class DbCommandTelemetryProcessor : ITelemetryProcessor
     /// <inheritdoc cref="ITelemetryProcessor.Process" />
     public void Process(ITelemetry item)
     {
-        if (item is TraceTelemetry trace && trace.Properties.ContainsKey("CategoryName") && trace.Properties["CategoryName"] == "Microsoft.EntityFrameworkCore.Database.Command")
+        if (item is TraceTelemetry trace && trace.Properties.TryGetValue("CategoryName", out string categoryName) && categoryName == "Microsoft.EntityFrameworkCore.Database.Command")
         {
             trace.Properties.TryGetValue("commandText", out var commandText);
             trace.Properties.TryGetValue("elapsed", out var elapsed);
-            int.TryParse(elapsed, NumberStyles.AllowThousands, null, out var duration);
+            int.TryParse(elapsed, NumberStyles.AllowThousands, CultureInfo.InvariantCulture, out var duration);
 
             var queryMatch = Regex.Match(commandText, @"(SELECT|INSERT|UPDATE|DELETE)(.+\n?FROM| INTO)? (\w+)");
             var queryName = queryMatch.Groups.Count == 4 ? $"{queryMatch.Groups[1].Value} {queryMatch.Groups[3].Value}" : "query";
