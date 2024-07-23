@@ -66,7 +66,7 @@ public static class AdvancedQueryUtil
                 /* Critère de post-filtrage. */
                 .PostFilter(postFilterQuery);
 
-            if (sourceFields.Any())
+            if (sourceFields.Length != 0)
             {
                 s.Source(src => src.Includes(f => f.Fields(sourceFields)));
             }
@@ -236,7 +236,6 @@ public static class AdvancedQueryUtil
             /* Récupération de la liste des champs texte sur lesquels rechercher, potentiellement filtrés par le critère. */
             var searchFields = def.SearchFields
                 .Where(sf => criteria.SearchFields == null || criteria.SearchFields.Contains(sf.FieldName))
-                .Select(sf => sf.FieldName)
                 .ToArray();
 
             /* Constuit la sous requête de query. */
@@ -270,7 +269,7 @@ public static class AdvancedQueryUtil
                     switch (field.Indexing)
                     {
                         case SearchFieldIndexing.FullText:
-                            filterList.Add(BuildMultiMatchQuery<TDocument>(propValueString, field.FieldName));
+                            filterList.Add(BuildMultiMatchQuery<TDocument>(propValueString, field));
                             break;
                         case SearchFieldIndexing.Term:
                         case SearchFieldIndexing.Sort:
@@ -351,7 +350,7 @@ public static class AdvancedQueryUtil
                 })
                 .Where(f => f != null)
                 .ToArray())
-            .Where(c => c.Any());
+            .Where(c => c.Length != 0);
 
         /* Concatène en "ET" toutes les sous-requêtes. */
         return (

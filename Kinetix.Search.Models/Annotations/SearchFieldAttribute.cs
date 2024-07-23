@@ -68,4 +68,9 @@ public class SearchFieldAttribute : Attribute
     /// </summary>
     public int PkOrder { get; set; }
 
+    /// <summary>
+    /// Boost à utiliser sur le champ dans la requête de recherche full-text (à utiliser avec SearchFieldCategory.Search).
+    /// </summary>
+    public decimal Boost { get; set; }
+
 }

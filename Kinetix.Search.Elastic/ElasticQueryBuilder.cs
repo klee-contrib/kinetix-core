@@ -1,4 +1,5 @@
-﻿using Nest;
+﻿using Kinetix.Search.Core.DocumentModel;
+using Nest;
 
 namespace Kinetix.Search.Elastic;
 
@@ -13,14 +14,14 @@ public static class ElasticQueryBuilder
     /// <param name="text">Texte de recherche.</param>
     /// <param name="fields">Champs de recherche.</param>
     /// <returns>Requête.</returns>
-    public static Func<QueryContainerDescriptor<TDocument>, QueryContainer> BuildMultiMatchQuery<TDocument>(string text, params string[] fields)
+    public static Func<QueryContainerDescriptor<TDocument>, QueryContainer> BuildMultiMatchQuery<TDocument>(string text, params DocumentFieldDescriptor[] fields)
         where TDocument : class
     {
         return q => q.MultiMatch(m => m
             .Query(text)
             .Operator(Operator.And)
             .Type(TextQueryType.CrossFields)
-            .Fields(fields));
+            .Fields(fields.Select(f => new Field(f.FieldName, Convert.ToDouble(f.Boost))).ToArray()));
     }
 
     /// <summary>

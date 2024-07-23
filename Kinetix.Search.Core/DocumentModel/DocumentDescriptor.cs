@@ -64,6 +64,7 @@ public class DocumentDescriptor
                     PkOrder = searchAttr?.PkOrder ?? 0,
                     IsPartialRebuildDate = dateAttr != null,
                     IsMultiValued = isArray || isMultiValued,
+                    Boost = searchAttr?.Boost ?? 1,
                     OtherAttributes = property.GetCustomAttributes(true).Where(a => a is not SearchFieldAttribute and not PartialRebuildDatePropertyAttribute).ToList()
                 };
 
