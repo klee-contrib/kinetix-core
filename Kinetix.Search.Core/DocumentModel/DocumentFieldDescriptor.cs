@@ -84,7 +84,7 @@ public sealed class DocumentFieldDescriptor
     /// <summary>
     /// Boost à utiliser sur le champ dans la requête de recherche full-text.
     /// </summary>
-    public decimal Boost
+    public double Boost
     {
         get;
         internal set;

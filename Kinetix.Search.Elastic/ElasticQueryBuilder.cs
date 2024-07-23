@@ -21,7 +21,7 @@ public static class ElasticQueryBuilder
             .Query(text)
             .Operator(Operator.And)
             .Type(TextQueryType.CrossFields)
-            .Fields(fields.Select(f => new Field(f.FieldName, Convert.ToDouble(f.Boost))).ToArray()));
+            .Fields(fields.Select(f => new Field(f.FieldName, f.Boost)).ToArray()));
     }
 
     /// <summary>

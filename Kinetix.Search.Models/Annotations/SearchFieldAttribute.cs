@@ -71,6 +71,6 @@ public class SearchFieldAttribute : Attribute
     /// <summary>
     /// Boost à utiliser sur le champ dans la requête de recherche full-text (à utiliser avec SearchFieldCategory.Search).
     /// </summary>
-    public decimal Boost { get; set; }
+    public double Boost { get; set; }
 
 }
