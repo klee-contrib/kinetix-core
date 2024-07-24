@@ -58,7 +58,7 @@ public static class ElasticQueryBuilder
     }
 
     /// <summary>
-    /// Construit une requête avec des AND sur des sous-requêtes.
+    /// Construit une requête avec des AND (filter) sur des sous-requêtes.
     /// </summary>
     /// <param name="subQueries">Sous-requêtes.</param>
     /// <returns>Requête.</returns>
@@ -74,12 +74,28 @@ public static class ElasticQueryBuilder
     }
 
     /// <summary>
+    /// Construit une requête avec des AND (must, pour calculer le score) sur des sous-requêtes.
+    /// </summary>
+    /// <param name="subQueries">Sous-requêtes.</param>
+    /// <returns>Requête.</returns>
+    public static Func<QueryContainerDescriptor<TDocument>, QueryContainer> BuildMustQuery<TDocument>(params Func<QueryContainerDescriptor<TDocument>, QueryContainer>[] subQueries)
+        where TDocument : class
+    {
+        return subQueries.Length switch
+        {
+            0 => q => q,
+            1 => subQueries[0],
+            _ => q => q.Bool(b => b.Must(subQueries))
+        };
+    }
+
+    /// <summary>
     /// Construit une requête avec des OR sur des sous-requêtes.
     /// </summary>
     /// <param name="subQueries">Sous-requêtes.</param>
     /// <returns>Requête.</returns>
     public static Func<QueryContainerDescriptor<TDocument>, QueryContainer> BuildOrQuery<TDocument>(params Func<QueryContainerDescriptor<TDocument>, QueryContainer>[] subQueries)
-    where TDocument : class
+        where TDocument : class
     {
         return subQueries.Length switch
         {

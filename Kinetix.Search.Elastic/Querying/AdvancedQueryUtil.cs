@@ -186,7 +186,7 @@ public static class AdvancedQueryUtil
         where TCriteria : ICriteria, new()
     {
         var (_, postFilterQuery) = GetPostFilterSubQuery(input, facetHandler, def);
-        return BuildAndQuery(GetFilterQuery(def, input, facetHandler), postFilterQuery);
+        return BuildMustQuery(GetFilterQuery(def, input, facetHandler), postFilterQuery);
     }
 
     /// <summary>
@@ -310,11 +310,11 @@ public static class AdvancedQueryUtil
             /* Concatène en "ET" toutes les sous-requêtes de facettes. */
             var monoValuedFacetsSubQuery = BuildAndQuery(facetSubQueryList);
 
-            return BuildAndQuery(new[] { textSubQuery, filterSubQuery, monoValuedFacetsSubQuery });
+            return BuildMustQuery(new[] { textSubQuery, filterSubQuery, monoValuedFacetsSubQuery });
         })
         .ToArray());
 
-        return BuildAndQuery(new[] { securitySubQuery, criteriaSubQuery, filter }.Where(f => f != null).ToArray());
+        return BuildMustQuery(new[] { securitySubQuery, criteriaSubQuery, filter }.Where(f => f != null).ToArray());
     }
 
     /// <summary>
