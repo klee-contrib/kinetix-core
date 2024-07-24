@@ -6,52 +6,34 @@ namespace Kinetix.Web.Exceptions;
 /// <summary>
 /// Handler par défaut pour les BusinessException.
 /// </summary>
-public class BusinessExceptionHandler : IExceptionHandler
+public class BusinessExceptionHandler : IKinetixExceptionHandler
 {
     /// <inheritdoc />
     public int Priority => 1;
 
-    /// <inheritdoc cref="IExceptionHandler.Handle" />
-    public IResult Handle(Exception exception)
+    /// <inheritdoc cref="IKinetixExceptionHandler.Handle" />
+    public ValueTask<IResult?> Handle(Exception exception)
     {
         if (exception is not BusinessException be)
         {
-            return null;
+            return ValueTask.FromResult<IResult?>(null);
         }
 
-        var result = new Dictionary<string, object>();
-        var errors = new List<string>();
+        var result = new KinetixErrorResponse { Code = be.Code };
 
         if (be.Errors != null && be.Errors.HasError)
         {
             foreach (var error in be.Errors)
             {
-                if (string.IsNullOrEmpty(error.FieldName))
-                {
-                    errors.Add(error.Message);
-                }
-                else
-                {
-                    result.Add(error.FieldName, error.Message);
-                }
+                result.Errors.Add(error.Message);
             }
         }
 
         if (!string.IsNullOrEmpty(be.BaseMessage))
         {
-            errors.Add(be.BaseMessage);
+            result.Errors.Add(be.BaseMessage);
         }
 
-        if (errors.Any())
-        {
-            result.Add(EntityException.GlobalErrorKey, errors);
-        }
-
-        if (be.Code != null)
-        {
-            result.Add(EntityException.CodeKey, be.Code);
-        }
-
-        return Results.BadRequest(result);
+        return ValueTask.FromResult<IResult?>(Results.BadRequest(result));
     }
 }

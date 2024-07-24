@@ -1,13 +1,13 @@
 ﻿using System.Globalization;
-using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 
 namespace Kinetix.Web.Filters;
 
 /// <summary>
-/// Filtre pour gérer la culture dans la Web API.
+/// Filtre pour gérer la culture du header.
 /// </summary>
-public class CultureFilter : IResourceFilter
+public class CultureFilter : IEndpointFilter
 {
     /// <summary>
     /// Nom de l'entête HTTP contenant le code de la culture.
@@ -19,12 +19,8 @@ public class CultureFilter : IResourceFilter
     /// </summary>
     private const string DefaultCultureCode = "fr-FR";
 
-    public void OnResourceExecuted(ResourceExecutedContext context)
-    {
-        // RAS.
-    }
-
-    public void OnResourceExecuting(ResourceExecutingContext context)
+    /// <inheritdoc cref="IEndpointFilter.InvokeAsync" />
+    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         context.HttpContext.Request.Headers.TryGetValue(CultureHeaderCode, out var cultureList);
 
@@ -35,7 +31,7 @@ public class CultureFilter : IResourceFilter
 
         if (cultureList.Count == 1)
         {
-            var cultureCode = cultureList.First();
+            var cultureCode = cultureList.First()!;
             Thread.CurrentThread.CurrentCulture = new CultureInfo(cultureCode);
             Thread.CurrentThread.CurrentUICulture = new CultureInfo(cultureCode);
         }
@@ -43,5 +39,7 @@ public class CultureFilter : IResourceFilter
         {
             throw new NotSupportedException("Too many CultureCode defined in client request.");
         }
+
+        return await next(context);
     }
 }

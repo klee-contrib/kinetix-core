@@ -1,53 +1,28 @@
 ﻿using Kinetix.Services;
-using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Http;
 
 namespace Kinetix.Web.Filters;
 
 /// <summary>
-/// Filtre pour gérer la transaction dans MVC / Razor Pages.
+/// Filtre pour gérer la transaction.
 /// </summary>
-public class TransactionFilter : IActionFilter, IPageFilter
+public class TransactionFilter(TransactionScopeManager transactionScopeManager) : IEndpointFilter
 {
-    private readonly TransactionScopeManager _transactionScopeManager;
-    private ServiceScope _scope;
+    private ServiceScope? _scope;
 
-    /// <summary>
-    /// Constructeur.
-    /// </summary>
-    public TransactionFilter(TransactionScopeManager transactionScopeManager)
+    /// <inheritdoc cref="IEndpointFilter.InvokeAsync" />
+    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
-        _transactionScopeManager = transactionScopeManager;
-    }
-
-    public void OnActionExecuted(ActionExecutedContext context)
-    {
-        if (context.Exception == null)
+        _scope = transactionScopeManager.EnsureTransaction();
+        try
         {
-            _scope.Complete();
+            var result = await next(context);
+            _scope?.Complete();
+            return result;
         }
-
-        _scope.Dispose();
-    }
-
-    public void OnActionExecuting(ActionExecutingContext context)
-    {
-        _scope = _transactionScopeManager.EnsureTransaction();
-    }
-
-    public void OnPageHandlerExecuted(PageHandlerExecutedContext context)
-    {
-        if (context.ModelState.IsValid)
+        finally
         {
-            _scope.Complete();
+            _scope?.Dispose();
         }
-
-        _scope.Dispose();
     }
-
-    public void OnPageHandlerExecuting(PageHandlerExecutingContext context)
-    {
-        _scope = _transactionScopeManager.EnsureTransaction();
-    }
-
-    public void OnPageHandlerSelected(PageHandlerSelectedContext context) { }
 }

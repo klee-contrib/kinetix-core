@@ -1,5 +1,4 @@
 ﻿using System.Security;
-using Kinetix.Modeling.Exceptions;
 using Microsoft.AspNetCore.Http;
 
 namespace Kinetix.Web.Exceptions;
@@ -7,24 +6,21 @@ namespace Kinetix.Web.Exceptions;
 /// <summary>
 /// Handler par défaut pour les SecurityException
 /// </summary>
-public class SecurityExceptionHandler : IExceptionHandler
+public class SecurityExceptionHandler : IKinetixExceptionHandler
 {
     /// <inheritdoc />
     public int Priority => 1;
 
-    /// <inheritdoc cref="IExceptionHandler.Handle" />
-    public IResult Handle(Exception exception)
+    /// <inheritdoc cref="IKinetixExceptionHandler.Handle" />
+    public ValueTask<IResult?> Handle(Exception exception)
     {
         if (exception is not SecurityException)
         {
-            return null;
+            return ValueTask.FromResult<IResult?>(null);
         }
 
-        return Results.Json(
-            new Dictionary<string, List<string>>
-            {
-                [EntityException.GlobalErrorKey] = new() { exception.Message },
-            },
-            statusCode: 403);
+        return ValueTask.FromResult<IResult?>(Results.Json(
+            new KinetixErrorResponse { Errors = [exception.Message] },
+            statusCode: 403));
     }
 }

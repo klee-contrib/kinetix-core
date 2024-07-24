@@ -5,7 +5,7 @@ namespace Kinetix.Web.Exceptions;
 /// <summary>
 /// Handler d'exception pour les filtres ASP.NET Core.
 /// </summary>
-public interface IExceptionHandler
+public interface IKinetixExceptionHandler
 {
     /// <summary>
     /// Priorité du handler. Plus le nombre est grand, plus le handler sera prioritaire dans le traitement des exceptions.
@@ -18,6 +18,6 @@ public interface IExceptionHandler
     /// </summary>
     /// <param name="exception">Exception.</param>
     /// <returns>Résultat si traité, null si ignoré.</returns>
-    IResult Handle(Exception exception);
+    ValueTask<IResult?> Handle(Exception exception);
 }
 

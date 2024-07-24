@@ -43,7 +43,7 @@ public static class ReferenceManagerExtensions
             referenceManager.FlushCache(referenceName);
         });
 
-        group.AddEndpointFilter<ExceptionMinimalFilter>();
+        group.AddEndpointFilter<TransactionFilter>();
 
         return group;
     }

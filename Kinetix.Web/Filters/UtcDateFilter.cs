@@ -1,28 +1,34 @@
-﻿using Microsoft.AspNetCore.Mvc.Filters;
+﻿using Microsoft.AspNetCore.Http;
 
 namespace Kinetix.Web.Filters;
 
-public class UtcDateFilter : IActionFilter
+/// <summary>
+/// Filtre pour vérifier que les dates sont bien en Kind UTC.
+/// </summary>
+public class UtcDateFilter : IEndpointFilter
 {
-    public void OnActionExecuted(ActionExecutedContext context)
+    /// <inheritdoc cref="IEndpointFilter.InvokeAsync" />
+    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
-    }
+        var parameters = new List<object?>();
 
-    public void OnActionExecuting(ActionExecutingContext context)
-    {
-        var fixedDates = new Dictionary<string, DateTime>();
-
-        foreach (var parameter in context.ActionArguments)
+        foreach (var parameter in context.Arguments)
         {
-            if (parameter.Value is DateTime date)
+            if (parameter is DateTime date)
             {
-                fixedDates[parameter.Key] = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+                parameters.Add(DateTime.SpecifyKind(date, DateTimeKind.Utc));
+            }
+            else
+            {
+                parameters.Add(parameter);
             }
         }
 
-        foreach (var fixedDate in fixedDates)
+        foreach (var parameter in parameters)
         {
-            context.ActionArguments[fixedDate.Key] = fixedDate.Value;
+            context.Arguments[parameters.IndexOf(parameter)] = parameter;
         }
+
+        return await next(context);
     }
 }
