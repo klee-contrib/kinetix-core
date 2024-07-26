@@ -53,12 +53,12 @@ public sealed class ElasticMappingFactory
 
         if (mapperType != null)
         {
-            return ((IElasticMapper)Activator.CreateInstance(mapperType)).Map(selector, field);
+            return ((IElasticMapper)Activator.CreateInstance(mapperType)!).Map(selector, field);
         }
 
         if (_provider.GetService(typeof(IElasticMapper<>).MakeGenericType(field.PropertyType)) is not IElasticMapper mapper)
         {
-            mapper = _provider.GetService<IElasticMapper<string>>();
+            mapper = _provider.GetRequiredService<IElasticMapper<string>>();
         }
 
         return mapper.Map(selector, field);

@@ -31,6 +31,6 @@ public class ExistsFacet<TDocument> : TermFacet<TDocument>
     /// <inheritdoc />
     public override string ResolveLabel(string primaryKey)
     {
-        return null;
+        return "focus.search.results.yes";
     }
 }

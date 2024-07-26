@@ -26,7 +26,7 @@ public class AdvancedQueryInputBuilder<TDocument> : AdvancedQueryInputBuilder<TD
 /// <typeparam name="TDocument">Type de document.</typeparam>
 /// <typeparam name="TCriteria">Type du critère.</typeparam>
 public class AdvancedQueryInputBuilder<TDocument, TCriteria>
- where TCriteria : ICriteria, new()
+ where TCriteria : ICriteria
 {
     private readonly IReferenceManager _referenceManager;
 

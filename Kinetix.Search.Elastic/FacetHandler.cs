@@ -32,7 +32,7 @@ public class FacetHandler
     /// <param name="facetDef">Définition de facette.</param>
     /// <param name="isMultiValued">Si multi valué.</param>
     /// <returns></returns>
-    public Func<QueryContainerDescriptor<TDocument>, QueryContainer> BuildMultiSelectableFilter<TDocument>(FacetInput input, IFacetDefinition<TDocument> facetDef, bool isMultiValued)
+    public Func<QueryContainerDescriptor<TDocument>, QueryContainer>? BuildMultiSelectableFilter<TDocument>(FacetInput input, IFacetDefinition<TDocument> facetDef, bool isMultiValued)
          where TDocument : class
     {
         if (!isMultiValued && input.Selected.Any() && input.Excluded.Any())
@@ -125,15 +125,15 @@ public class FacetHandler
                     /* On ne filtre pas sur la facette en cours. */
                     if (inf.Key == facet.Code)
                     {
-                        return null;
+                        return null!;
                     }
 
                     var targetFacet = facetList.Single(f => f.Code == inf.Key);
 
                     /* On ne filtre pas sur les facettes non multisélectionnables. */
                     return !targetFacet.IsMultiSelectable
-                        ? null
-                        : BuildMultiSelectableFilter(inf.Value, targetFacet, def.Fields[targetFacet.FieldName].IsMultiValued);
+                        ? null!
+                        : BuildMultiSelectableFilter(inf.Value, targetFacet, def.Fields[targetFacet.FieldName].IsMultiValued)!;
                 })
                 .Where(sf => sf != null)
                 .ToArray())
@@ -189,10 +189,7 @@ public class FacetHandler
         else
         {
             var bucket = aggs.Terms(facetDef.Code);
-            if (bucket == null)
-            {
-                bucket = aggs.Filter(facetDef.Code).Terms(facetDef.Code);
-            }
+            bucket ??= aggs.Filter(facetDef.Code).Terms(facetDef.Code);
 
             foreach (var b in bucket.Buckets)
             {
@@ -211,10 +208,7 @@ public class FacetHandler
         if (facetDef.HasMissing)
         {
             var bucket = aggs.Filter(facetDef.Code + MissingFacetPrefix);
-            if (bucket == null)
-            {
-                bucket = aggs.Filter(facetDef.Code).Filter(facetDef.Code + MissingFacetPrefix);
-            }
+            bucket ??= aggs.Filter(facetDef.Code).Filter(facetDef.Code + MissingFacetPrefix);
 
             if (bucket.DocCount > 0)
             {

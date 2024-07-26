@@ -8,16 +8,8 @@ namespace Kinetix.Search.Core.DocumentModel;
 /// </summary>
 public class DocumentDescriptor
 {
-    private readonly Dictionary<Type, DocumentDefinition> _beanDefinitionDictionnary;
+    private readonly Dictionary<Type, DocumentDefinition> _beanDefinitionDictionnary = [];
     private readonly object lockObj = new();
-
-    /// <summary>
-    /// Crée un nouvelle instance.
-    /// </summary>
-    public DocumentDescriptor()
-    {
-        _beanDefinitionDictionnary = new Dictionary<Type, DocumentDefinition>();
-    }
 
     /// <summary>
     /// Retourne la definition d'un document.
@@ -27,11 +19,11 @@ public class DocumentDescriptor
     public DocumentDefinition GetDefinition(Type beanType)
     {
         return beanType == null
-            ? throw new ArgumentNullException("beanType")
+            ? throw new ArgumentNullException(nameof(beanType))
             : GetDefinitionInternal(beanType);
     }
 
-    private IEnumerable<DocumentFieldDescriptor> GetProperties(Type beanType, string prefix = null, bool isMultiValued = false)
+    private IEnumerable<DocumentFieldDescriptor> GetProperties(Type beanType, string? prefix = null, bool isMultiValued = false)
     {
         foreach (var property in beanType.GetProperties())
         {
@@ -39,7 +31,7 @@ public class DocumentDescriptor
             var isArray = property.PropertyType.IsArray;
             var propertyType = Nullable.GetUnderlyingType(property.PropertyType)
                 ?? (property.PropertyType.IsArray
-                    ? property.PropertyType.GetElementType()
+                    ? property.PropertyType.GetElementType()!
                     : property.PropertyType);
 
             if (propertyType.GetProperties().Any(prop => prop.GetCustomAttribute<SearchFieldAttribute>() != null))

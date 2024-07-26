@@ -30,14 +30,14 @@ public static class AdvancedQueryUtil
         DocumentDefinition def,
         AdvancedQueryInput<TDocument, TCriteria> input,
         FacetHandler facetHandler,
-        Func<QueryContainerDescriptor<TDocument>, QueryContainer> filter = null,
-        Action<AggregationContainerDescriptor<TDocument>> aggs = null,
-        ICollection<IFacetDefinition<TDocument>> facetDefList = null,
-        string groupFieldName = null,
-        string pitId = null,
-        object[] searchAfter = null)
+        Func<QueryContainerDescriptor<TDocument>, QueryContainer>? filter = null,
+        Action<AggregationContainerDescriptor<TDocument>>? aggs = null,
+        ICollection<IFacetDefinition<TDocument>>? facetDefList = null,
+        string? groupFieldName = null,
+        string? pitId = null,
+        object[]? searchAfter = null)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         /* Tri */
         var sortDef = GetSortDefinition(def, input);
@@ -55,7 +55,7 @@ public static class AdvancedQueryUtil
         var size = hasGroup ? 0 : input.SearchCriteria.Max(sc => sc.Top) ?? 500; // TODO Paramétrable ?
 
         /* Source filtering */
-        var sourceFields = input.SearchCriteria.SelectMany(sc => sc.Criteria.SourceFields ?? Array.Empty<string>()).Distinct().ToArray();
+        var sourceFields = input.SearchCriteria.SelectMany(sc => sc.Criteria?.SourceFields ?? Array.Empty<string>()).Distinct().ToArray();
 
         return (SearchDescriptor<TDocument> s) =>
         {
@@ -91,6 +91,10 @@ public static class AdvancedQueryUtil
             {
                 s.Sort(x => x.Field(sortDef.FieldName, sortDef.Order));
             }
+            else
+            {
+                s.Sort(x => x.Field("_score", SortOrder.Descending));
+            }
 
             IHighlight highlightSelector(HighlightDescriptor<TDocument> h) =>
                 h.Fields(def.SearchFields.Select(f => (Func<HighlightFieldDescriptor<TDocument>, IHighlightField>)(h => h.Field(f.FieldName))).ToArray());
@@ -100,7 +104,7 @@ public static class AdvancedQueryUtil
             {
                 s.Aggregations(a =>
                 {
-                    if (hasFacet)
+                    if (hasFacet && facetDefList != null)
                     {
                         /* Facettage. */
                         foreach (var facetDef in facetDefList)
@@ -183,7 +187,7 @@ public static class AdvancedQueryUtil
         AdvancedQueryInput<TDocument, TCriteria> input,
         FacetHandler facetHandler)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         var (_, postFilterQuery) = GetPostFilterSubQuery(input, facetHandler, def);
         return BuildMustQuery(GetFilterQuery(def, input, facetHandler), postFilterQuery);
@@ -201,9 +205,9 @@ public static class AdvancedQueryUtil
         DocumentDefinition def,
         AdvancedQueryInput<TDocument, TCriteria> input,
         FacetHandler facetHandler,
-        Func<QueryContainerDescriptor<TDocument>, QueryContainer> filter = null)
+        Func<QueryContainerDescriptor<TDocument>, QueryContainer>? filter = null)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         if (input.Security?.Length == 0)
         {
@@ -217,7 +221,7 @@ public static class AdvancedQueryUtil
 
         /* Constuit la sous requête de sécurité. */
         var securitySubQuery = input.Security != null
-            ? BuildOrQuery(input.Security.Select(s => BuildFilter<TDocument>(def.SecurityField.FieldName, s)).ToArray())
+            ? BuildOrQuery(input.Security.Select(s => BuildFilter<TDocument>(def.SecurityField!.FieldName, s)).ToArray())
             : q => q;
 
         var isMultiCriteria = input.SearchCriteria.Count() > 1;
@@ -225,21 +229,21 @@ public static class AdvancedQueryUtil
         /* Construit la sous requête des différents critères. */
         var criteriaSubQuery = BuildOrQuery(input.SearchCriteria.Select(sc =>
         {
-            var criteria = sc.Criteria ?? new TCriteria();
+            var criteria = sc.Criteria;
 
             /* Normalisation des paramètres. */
-            if (criteria.Query == "*" || string.IsNullOrWhiteSpace(criteria.Query))
+            if (criteria != null && (criteria.Query == "*" || string.IsNullOrWhiteSpace(criteria.Query)))
             {
                 criteria.Query = null;
             }
 
             /* Récupération de la liste des champs texte sur lesquels rechercher, potentiellement filtrés par le critère. */
             var searchFields = def.SearchFields
-                .Where(sf => criteria.SearchFields == null || criteria.SearchFields.Contains(sf.FieldName))
+                .Where(sf => criteria?.SearchFields == null || criteria.SearchFields.Contains(sf.FieldName))
                 .ToArray();
 
             /* Constuit la sous requête de query. */
-            var textSubQuery = criteria.Query != null && (criteria.SearchFields?.Any() ?? true)
+            var textSubQuery = criteria?.Query != null && (criteria.SearchFields?.Any() ?? true)
                 ? BuildMultiMatchQuery<TDocument>(criteria.Query, searchFields)
                 : q => q;
 
@@ -263,7 +267,7 @@ public static class AdvancedQueryUtil
                     {
                         bool b => b ? "true" : "false",
                         DateTime d => d.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-                        _ => propValue.ToString()
+                        _ => propValue.ToString()!
                     };
 
                     switch (field.Indexing)
@@ -292,17 +296,17 @@ public static class AdvancedQueryUtil
                     var facetDef = input.FacetQueryDefinition.Facets.Single(x => x.Code == f.Key);
                     if (facetDef.IsMultiSelectable && !isMultiCriteria)
                     {
-                        return null;
+                        return null!;
                     }
 
                     /* La facette n'est pas multi-sélectionnable donc on prend direct la première valeur (sélectionnée ou exclue). */
                     return facetDef.IsMultiSelectable
-                        ? facetHandler.BuildMultiSelectableFilter(f.Value, facetDef, def.Fields[facetDef.FieldName].IsMultiValued)
+                        ? facetHandler.BuildMultiSelectableFilter(f.Value, facetDef, def.Fields[facetDef.FieldName].IsMultiValued)!
                         : f.Value.Selected.Any()
                             ? facetHandler.CreateFacetSubQuery(f.Value.Selected.First(), false, facetDef)
                         : f.Value.Excluded.Any()
                             ? facetHandler.CreateFacetSubQuery(f.Value.Excluded.First(), true, facetDef)
-                        : null;
+                        : null!;
                 })
                 .Where(f => f != null)
                 .ToArray();
@@ -314,7 +318,7 @@ public static class AdvancedQueryUtil
         })
         .ToArray());
 
-        return BuildMustQuery(new[] { securitySubQuery, criteriaSubQuery, filter }.Where(f => f != null).ToArray());
+        return BuildMustQuery(new[] { securitySubQuery, criteriaSubQuery, filter! }.Where(f => f != null).ToArray());
     }
 
     /// <summary>
@@ -329,7 +333,7 @@ public static class AdvancedQueryUtil
         FacetHandler facetHandler,
         DocumentDefinition docDef)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         if (input.SearchCriteria.Count() > 1)
         {
@@ -345,8 +349,8 @@ public static class AdvancedQueryUtil
                     var def = input.FacetQueryDefinition.Facets.SingleOrDefault(x => x.IsMultiSelectable == true && x.Code == f.Key);
 
                     return def == null
-                        ? null
-                        : facetHandler.BuildMultiSelectableFilter(f.Value, def, docDef.Fields[def.FieldName].IsMultiValued);
+                        ? null!
+                        : facetHandler.BuildMultiSelectableFilter(f.Value, def, docDef.Fields[def.FieldName].IsMultiValued)!;
                 })
                 .Where(f => f != null)
                 .ToArray())
@@ -363,9 +367,9 @@ public static class AdvancedQueryUtil
     /// </summary>
     /// <param name="input">Input de la recherche.</param>
     /// <returns>Nom du champ.</returns>
-    public static string GetGroupFieldName<TDocument, TCriteria>(AdvancedQueryInput<TDocument, TCriteria> input)
+    public static string? GetGroupFieldName<TDocument, TCriteria>(AdvancedQueryInput<TDocument, TCriteria> input)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         // On groupe par le premier groupe renseigné.
         var groupFacetName = input.SearchCriteria.FirstOrDefault(sc => !string.IsNullOrEmpty(sc.Group))?.Group;
@@ -393,7 +397,7 @@ public static class AdvancedQueryUtil
         DocumentDefinition def,
         AdvancedQueryInput<TDocument, TCriteria> input)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         // On trie par le premier tri renseigné.
         var fieldName = input.SearchCriteria.FirstOrDefault(sc => !string.IsNullOrEmpty(sc.SortFieldName))?.SortFieldName;
@@ -433,7 +437,7 @@ public static class AdvancedQueryUtil
         /// <summary>
         /// Champ du tri (camelCase).
         /// </summary>
-        public string FieldName
+        public string? FieldName
         {
             get;
             set;

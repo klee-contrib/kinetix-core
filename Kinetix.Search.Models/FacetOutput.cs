@@ -8,7 +8,7 @@ public class FacetOutput
     /// <summary>
     /// Code de la facette.
     /// </summary>
-    public string Code
+    public required string Code
     {
         get;
         set;
@@ -17,7 +17,7 @@ public class FacetOutput
     /// <summary>
     /// Libellé de la facette.
     /// </summary>
-    public string Label
+    public required string Label
     {
         get;
         set;
@@ -53,7 +53,7 @@ public class FacetOutput
     /// <summary>
     /// Valeurs possibles des facettes.
     /// </summary>
-    public ICollection<FacetItem> Values
+    public required ICollection<FacetItem> Values
     {
         get;
         set;

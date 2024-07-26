@@ -56,20 +56,13 @@ public class ElasticStore : ISearchStore
         return indexCreated;
     }
 
-    /// <inheritdoc cref="ISearchStore.Get{TDocument}(string)" />
-    public TDocument Get<TDocument>(string id)
-        where TDocument : class
-    {
-        var def = _documentDescriptor.GetDefinition(typeof(TDocument));
-        return _logger.LogQuery(_analytics, "Get", () => _client.Get(new DocumentPath<TDocument>(id))).Source;
-    }
 
-    /// <inheritdoc cref="ISearchStore.Get{TDocument}(TDocument)" />
-    public TDocument Get<TDocument>(TDocument bean)
+    /// <inheritdoc cref="ISearchStore.Get" />
+    public TDocument Get<TDocument>(object key)
         where TDocument : class
     {
         var def = _documentDescriptor.GetDefinition(typeof(TDocument));
-        return _logger.LogQuery(_analytics, "Get", () => _client.Get(new DocumentPath<TDocument>(def.PrimaryKey.GetValue(bean).ToString()))).Source;
+        return _logger.LogQuery(_analytics, "Get", () => _client.Get(new DocumentPath<TDocument>(def.PrimaryKey.GetValueFromDocument(key)))).Source;
     }
 
     /// <inheritdoc cref="ISearchStore.Bulk" />
@@ -78,11 +71,11 @@ public class ElasticStore : ISearchStore
         return new ElasticBulkDescriptor(_documentDescriptor, _client, _logger, _analytics);
     }
 
-    /// <inheritdoc cref="ISearchStore.Delete{TDocument}(TDocument, bool)" />
-    public void Delete<TDocument>(TDocument bean, bool refresh = true)
+    /// <inheritdoc cref="ISearchStore.Delete" />
+    public void Delete<TDocument>(object key, bool refresh = true)
         where TDocument : class
     {
-        Bulk().Delete(bean).Run(refresh);
+        Bulk().Delete<TDocument>(key).Run(refresh);
     }
 
     /// <inheritdoc cref="ISearchStore.Index" />
@@ -96,14 +89,14 @@ public class ElasticStore : ISearchStore
     }
 
     /// <inheritdoc cref="ISearchStore.ResetIndex" />
-    public int ResetIndex<TDocument>(IEnumerable<TDocument> documents, bool partialRebuild, ILogger rebuildLogger = null)
+    public int ResetIndex<TDocument>(IEnumerable<TDocument> documents, bool partialRebuild, ILogger? rebuildLogger = null)
         where TDocument : class
     {
         var indexName = SearchConfig.GetTypeNameForIndex(typeof(TDocument));
         var def = _documentDescriptor.GetDefinition(typeof(TDocument));
 
         /* On vide l'index des documents obsolètes. */
-        if (partialRebuild && def.IgnoreOnPartialRebuild?.OlderThanDays > 0)
+        if (partialRebuild && def.IgnoreOnPartialRebuild?.OlderThanDays > 0 && def.PartialRebuildDate != null)
         {
             rebuildLogger?.LogInformation($"Partial rebuild. Deleting recent documents for {indexName}...");
 
@@ -146,7 +139,7 @@ public class ElasticStore : ISearchStore
     /// <inheritdoc cref="ISearchStore.AdvancedQuery{TDocument, TOutput, TCriteria}(AdvancedQueryInput{TDocument, TCriteria}, Func{TDocument, TOutput})" />
     public QueryOutput<TOutput> AdvancedQuery<TDocument, TOutput, TCriteria>(AdvancedQueryInput<TDocument, TCriteria> input, Func<TDocument, TOutput> documentMapper)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         return AdvancedQuery(input, (d, _) => documentMapper(d), filter: null, aggs: null);
     }
@@ -154,7 +147,7 @@ public class ElasticStore : ISearchStore
     /// <inheritdoc cref="ISearchStore.AdvancedQuery{TDocument, TOutput, TCriteria}(AdvancedQueryInput{TDocument, TCriteria}, Func{TDocument, IReadOnlyDictionary{string, IReadOnlyCollection{string}}, TOutput})" />
     public QueryOutput<TOutput> AdvancedQuery<TDocument, TOutput, TCriteria>(AdvancedQueryInput<TDocument, TCriteria> input, Func<TDocument, IReadOnlyDictionary<string, IReadOnlyCollection<string>>, TOutput> documentMapper)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         return AdvancedQuery(input, documentMapper, filter: null, aggs: null);
     }
@@ -168,12 +161,9 @@ public class ElasticStore : ISearchStore
     /// <inheritdoc cref="ISearchStore.AdvancedCount" />
     public long AdvancedCount<TDocument, TCriteria>(AdvancedQueryInput<TDocument, TCriteria> input)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
-        if (input == null)
-        {
-            throw new ArgumentNullException(nameof(input));
-        }
+        ArgumentNullException.ThrowIfNull(input);
 
         var def = _documentDescriptor.GetDefinition(typeof(TDocument));
 
@@ -184,14 +174,11 @@ public class ElasticStore : ISearchStore
             .Count;
     }
 
-    internal IEnumerable<TOutput> AdvancedQueryAll<TDocument, TOutput, TCriteria>(AdvancedQueryInput<TDocument, TCriteria> input, Func<TDocument, IReadOnlyDictionary<string, IReadOnlyCollection<string>>, TOutput> documentMapper, Func<QueryContainerDescriptor<TDocument>, QueryContainer> filter)
+    internal IEnumerable<TOutput> AdvancedQueryAll<TDocument, TOutput, TCriteria>(AdvancedQueryInput<TDocument, TCriteria> input, Func<TDocument, IReadOnlyDictionary<string, IReadOnlyCollection<string>>, TOutput> documentMapper, Func<QueryContainerDescriptor<TDocument>, QueryContainer>? filter)
        where TDocument : class
-       where TCriteria : ICriteria, new()
+       where TCriteria : ICriteria
     {
-        if (input == null)
-        {
-            throw new ArgumentNullException(nameof(input));
-        }
+        ArgumentNullException.ThrowIfNull(input);
 
         var def = _documentDescriptor.GetDefinition(typeof(TDocument));
 
@@ -202,7 +189,7 @@ public class ElasticStore : ISearchStore
         var pitId = pit.Id;
         try
         {
-            object[] searchAfter = null;
+            object[]? searchAfter = null;
 
             var search = true;
             do
@@ -231,21 +218,18 @@ public class ElasticStore : ISearchStore
         }
     }
 
-    internal QueryOutput<TOutput> AdvancedQuery<TDocument, TOutput, TCriteria>(AdvancedQueryInput<TDocument, TCriteria> input, Func<TDocument, IReadOnlyDictionary<string, IReadOnlyCollection<string>>, TOutput> documentMapper, Func<QueryContainerDescriptor<TDocument>, QueryContainer> filter, Action<AggregationContainerDescriptor<TDocument>> aggs)
+    internal QueryOutput<TOutput> AdvancedQuery<TDocument, TOutput, TCriteria>(AdvancedQueryInput<TDocument, TCriteria> input, Func<TDocument, IReadOnlyDictionary<string, IReadOnlyCollection<string>>, TOutput> documentMapper, Func<QueryContainerDescriptor<TDocument>, QueryContainer>? filter, Action<AggregationContainerDescriptor<TDocument>>? aggs)
        where TDocument : class
-       where TCriteria : ICriteria, new()
+       where TCriteria : ICriteria
     {
-        if (input == null)
-        {
-            throw new ArgumentNullException(nameof(input));
-        }
+        ArgumentNullException.ThrowIfNull(input);
 
         /* Définition du document. */
         var def = _documentDescriptor.GetDefinition(typeof(TDocument));
 
         /* Facettage. */
         var facetDefList = input.FacetQueryDefinition.Facets;
-        var hasFacet = facetDefList.Any();
+        var hasFacet = facetDefList.Count != 0;
         /* Group */
         var groupFieldName = GetGroupFieldName(input);
         var hasGroup = groupFieldName != null;
@@ -272,7 +256,7 @@ public class ElasticStore : ISearchStore
         }
 
         /* Ajout des valeurs de facettes manquantes (cas d'une valeur demandée par le client non trouvée par la recherche.) */
-        foreach (var facet in input.SearchCriteria.SelectMany(sc => sc.Facets ?? new Dictionary<string, FacetInput>()))
+        foreach (var facet in input.SearchCriteria.SelectMany(sc => sc.Facets ?? []))
         {
             var facetItems = facetListOutput.Single(f => f.Code == facet.Key).Values;
             /* On ajoute un FacetItem par valeur non trouvée, avec un compte de 0. */
@@ -280,14 +264,16 @@ public class ElasticStore : ISearchStore
             {
                 if (!facetItems.Any(f => f.Code == value))
                 {
-                    var label = value == FacetConst.NotNullValue ? FacetConst.NotNullLabel :
-                       value == FacetConst.NullValue ? FacetConst.NullLabel
-                       : facetDefList.FirstOrDefault(fct => fct.Code == facet.Key)?.ResolveLabel(value);
+                    var label = value == FacetConst.NotNullValue
+                        ? FacetConst.NotNullLabel
+                        : value == FacetConst.NullValue
+                            ? FacetConst.NullLabel
+                            : facetDefList.FirstOrDefault(fct => fct.Code == facet.Key)?.ResolveLabel(value);
 
                     facetItems.Add(new FacetItem
                     {
                         Code = value,
-                        Label = label,
+                        Label = label!,
                         Count = 0
                     });
                 }
@@ -301,10 +287,7 @@ public class ElasticStore : ISearchStore
         {
             /* Groupement. */
             var bucket = res.Aggregations.Terms(groupFieldName);
-            if (bucket == null)
-            {
-                bucket = res.Aggregations.Filter(groupFieldName).Terms(groupFieldName);
-            }
+            bucket ??= res.Aggregations.Filter(groupFieldName).Terms(groupFieldName);
 
             foreach (var group in bucket.Buckets)
             {
@@ -314,19 +297,16 @@ public class ElasticStore : ISearchStore
                     Code = group.Key.ToString(),
                     Label = facetDefList.First(f => f.Code == input.SearchCriteria.First(sc => !string.IsNullOrEmpty(sc.Group)).Group).ResolveLabel(group.Key),
                     List = list,
-                    TotalCount = (int)group.DocCount
+                    TotalCount = (int)(group.DocCount ?? 0)
                 });
             }
 
             /* Groupe pour les valeurs missing. */
             var missingBucket = res.Aggregations.Missing(groupFieldName + MissingGroupPrefix);
-            if (missingBucket == null)
-            {
-                missingBucket = res.Aggregations.Filter(groupFieldName).Missing(groupFieldName + MissingGroupPrefix);
-            }
+            missingBucket ??= res.Aggregations.Filter(groupFieldName).Missing(groupFieldName + MissingGroupPrefix);
 
             var nullDocs = missingBucket.TopHits(TopHitName).Hits<TDocument>().Select(d => documentMapper(d.Source, d.Highlight)).ToList();
-            if (nullDocs.Any())
+            if (nullDocs.Count != 0)
             {
                 groupResultList.Add(new GroupResult<TOutput>
                 {

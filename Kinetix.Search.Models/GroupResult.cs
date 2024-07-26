@@ -11,7 +11,7 @@ public class GroupResult
     /// <summary>
     /// Code du groupe (= celui de la facette).
     /// </summary>
-    public string Code
+    public required string Code
     {
         get;
         set;
@@ -20,7 +20,7 @@ public class GroupResult
     /// <summary>
     /// Label du groupe (= celui de la facette)
     /// </summary>
-    public string Label
+    public required string Label
     {
         get;
         set;
@@ -29,7 +29,7 @@ public class GroupResult
     /// <summary>
     /// Liste d'éléments du groupe.
     /// </summary>
-    public ICollection List
+    public required ICollection List
     {
         get;
         set;

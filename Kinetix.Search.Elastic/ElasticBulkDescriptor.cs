@@ -27,35 +27,23 @@ public class ElasticBulkDescriptor : ISearchBulkDescriptor
         _logger = logger;
     }
 
-    /// <inheritdoc cref="ISearchBulkDescriptor.Delete{TDocument}(TDocument)" />
-    public ISearchBulkDescriptor Delete<TDocument>(TDocument bean)
+    /// <inheritdoc cref="ISearchBulkDescriptor.Delete" />
+    public ISearchBulkDescriptor Delete<TDocument>(object key)
        where TDocument : class
     {
         var def = _documentDescriptor.GetDefinition(typeof(TDocument));
-        _bulkDescriptor.Delete<TDocument>(d => d.Id(def.PrimaryKey.GetValue(bean).ToString()));
+        _bulkDescriptor.Delete<TDocument>(o => o.Id(def.PrimaryKey.GetValueFromKeyObject(key)));
         _operationCount++;
 
         return this;
     }
 
-    /// <inheritdoc cref="ISearchBulkDescriptor.DeleteMany{TDocument}(IEnumerable{string})" />
-    public ISearchBulkDescriptor DeleteMany<TDocument>(IEnumerable<string> ids)
-        where TDocument : class
-    {
-        _bulkDescriptor.DeleteMany<TDocument>(ids, (d, id) => d.Id(id));
-        _operationCount++;
-
-        return this;
-    }
-
-    /// <inheritdoc cref="ISearchBulkDescriptor.DeleteMany{TDocument}(IEnumerable{TDocument})" />
-    public ISearchBulkDescriptor DeleteMany<TDocument>(IEnumerable<TDocument> beans)
+    /// <inheritdoc cref="ISearchBulkDescriptor.DeleteMany" />
+    public ISearchBulkDescriptor DeleteMany<TDocument>(IEnumerable<object> keys)
        where TDocument : class
     {
         var def = _documentDescriptor.GetDefinition(typeof(TDocument));
-        _bulkDescriptor.DeleteMany<TDocument>(
-            beans.Select(bean => def.PrimaryKey.GetValue(bean).ToString()),
-            (d, id) => d.Id(id));
+        _bulkDescriptor.DeleteMany<TDocument>(keys.Select(def.PrimaryKey.GetValueFromKeyObject));
         _operationCount++;
 
         return this;
@@ -66,7 +54,7 @@ public class ElasticBulkDescriptor : ISearchBulkDescriptor
         where TDocument : class
     {
         var def = _documentDescriptor.GetDefinition(typeof(TDocument));
-        var id = def.PrimaryKey.GetValue(document).ToString();
+        var id = def.PrimaryKey.GetValueFromDocument(document);
         _bulkDescriptor.Index<TDocument>(y => y.Document(document).Id(id));
         _operationCount++;
 
@@ -80,7 +68,7 @@ public class ElasticBulkDescriptor : ISearchBulkDescriptor
         var def = _documentDescriptor.GetDefinition(typeof(TDocument));
         _bulkDescriptor.IndexMany(
             documents,
-            (b, document) => b.Id(def.PrimaryKey.GetValue(document).ToString()));
+            (b, document) => b.Id(def.PrimaryKey.GetValueFromDocument(document)));
         _operationCount++;
 
         return this;

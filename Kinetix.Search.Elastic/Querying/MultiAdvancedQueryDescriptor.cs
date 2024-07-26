@@ -12,9 +12,9 @@ public class MultiAdvancedQueryDescriptor : IMultiAdvancedQueryDescriptor
     private readonly ElasticClient _client;
     private readonly DocumentDescriptor _documentDescriptor;
     private readonly FacetHandler _facetHandler;
-    private readonly IDictionary<string, IDocumentMapper> _documentMappers = new Dictionary<string, IDocumentMapper>();
-    private readonly IDictionary<string, ISearchRequest> _searchDescriptors = new Dictionary<string, ISearchRequest>();
-    private readonly IList<(string code, string label)> _searchLabels = new List<(string, string)>();
+    private readonly Dictionary<string, IDocumentMapper> _documentMappers = [];
+    private readonly Dictionary<string, ISearchRequest> _searchDescriptors = [];
+    private readonly List<(string code, string label)> _searchLabels = [];
 
     public MultiAdvancedQueryDescriptor(ElasticClient client, DocumentDescriptor documentDescriptor, FacetHandler facetHandler)
     {
@@ -26,7 +26,7 @@ public class MultiAdvancedQueryDescriptor : IMultiAdvancedQueryDescriptor
     /// <inheritdoc cref="IMultiAdvancedQueryDescriptor.AddQuery{TDocument, TOutput, TCriteria}(string, string, AdvancedQueryInput{TDocument, TCriteria}, Func{TDocument, TOutput})" />
     public IMultiAdvancedQueryDescriptor AddQuery<TDocument, TOutput, TCriteria>(string code, string label, AdvancedQueryInput<TDocument, TCriteria> input, Func<TDocument, TOutput> documentMapper)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         return AddQuery(code, label, input, (d, _) => documentMapper(d));
     }
@@ -34,7 +34,7 @@ public class MultiAdvancedQueryDescriptor : IMultiAdvancedQueryDescriptor
     /// <inheritdoc cref="IMultiAdvancedQueryDescriptor.AddQuery{TDocument, TOutput, TCriteria}(string, string, AdvancedQueryInput{TDocument, TCriteria}, Func{TDocument, IReadOnlyDictionary{string, IReadOnlyCollection{string}}, TOutput})" />
     public IMultiAdvancedQueryDescriptor AddQuery<TDocument, TOutput, TCriteria>(string code, string label, AdvancedQueryInput<TDocument, TCriteria> input, Func<TDocument, IReadOnlyDictionary<string, IReadOnlyCollection<string>>, TOutput> documentMapper)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         foreach (var sc in input.SearchCriteria)
         {
@@ -88,7 +88,7 @@ public class MultiAdvancedQueryDescriptor : IMultiAdvancedQueryDescriptor
         return new QueryOutput
         {
             Groups = groups,
-            Facets = new[] { scopeFacet },
+            Facets = [scopeFacet],
             TotalCount = response.AllResponses.Sum((dynamic res) => (int)res.Total)
         };
     }
@@ -107,8 +107,9 @@ internal class DocumentMapper<TDocument, TOutput> : IDocumentMapper
     {
         _mapper = mapper;
     }
+
     public object Map(object input, IReadOnlyDictionary<string, IReadOnlyCollection<string>> highlights)
     {
-        return _mapper((TDocument)input, highlights);
+        return _mapper((TDocument)input, highlights)!;
     }
 }

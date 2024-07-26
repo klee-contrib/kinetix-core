@@ -8,7 +8,7 @@ public class FacetItem
     /// <summary>
     /// Code de la facette.
     /// </summary>
-    public string Code
+    public required string Code
     {
         get;
         set;
@@ -17,7 +17,7 @@ public class FacetItem
     /// <summary>
     /// Libellé de l'item.
     /// </summary>
-    public string Label
+    public required string Label
     {
         get;
         set;
@@ -26,7 +26,7 @@ public class FacetItem
     /// <summary>
     /// Nombre d'éléments pour l'item.
     /// </summary>
-    public long Count
+    public required long Count
     {
         get;
         set;

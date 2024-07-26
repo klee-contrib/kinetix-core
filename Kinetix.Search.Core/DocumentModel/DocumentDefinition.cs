@@ -64,7 +64,7 @@ public class DocumentDefinition
     {
         get;
         private set;
-    } = new DocumentPrimaryKeyDescriptor();
+    } = new();
 
     /// <summary>
     /// Retourne les propriétés de recherche textuelle.
@@ -73,12 +73,12 @@ public class DocumentDefinition
     {
         get;
         private set;
-    } = new List<DocumentFieldDescriptor>();
+    } = [];
 
     /// <summary>
     /// Retourne la propriété de filtrage de sécurité.
     /// </summary>
-    public DocumentFieldDescriptor SecurityField
+    public DocumentFieldDescriptor? SecurityField
     {
         get;
         private set;
@@ -96,7 +96,7 @@ public class DocumentDefinition
     /// <summary>
     /// Précise si le document a une condition de rebuild partiel.
     /// </summary>
-    public IgnoreOnPartialRebuildAttribute IgnoreOnPartialRebuild
+    public IgnoreOnPartialRebuildAttribute? IgnoreOnPartialRebuild
     {
         get;
         private set;
@@ -105,7 +105,7 @@ public class DocumentDefinition
     /// <summary>
     /// Retourne la propriété de date qui contrôle le rebuild partiel.
     /// </summary>
-    public DocumentFieldDescriptor PartialRebuildDate
+    public DocumentFieldDescriptor? PartialRebuildDate
     {
         get;
         private set;

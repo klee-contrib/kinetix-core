@@ -9,27 +9,18 @@ public interface ISearchBulkDescriptor
     /// Supprime un document d'un index.
     /// </summary>
     /// <typeparam name="TDocument">Type de document.</typeparam>
-    /// <param name="bean">La clé composite.</param>
+    /// <param name="key">La clé composite.</param>
     /// <returns>ISearchBulkDescriptor.</returns>
-    ISearchBulkDescriptor Delete<TDocument>(TDocument bean)
-        where TDocument : class;
-
-    /// <summary>
-    /// Supprime des documents d'un index.
-    /// </summary>
-    /// <typeparam name="TDocument">Type de document.</typeparam>
-    /// <param name="ids">IDs des document.</param>
-    /// <returns>ISearchBulkDescriptor.</returns>
-    ISearchBulkDescriptor DeleteMany<TDocument>(IEnumerable<string> ids)
+    ISearchBulkDescriptor Delete<TDocument>(object key)
         where TDocument : class;
 
     /// <summary>
     /// Supprime des document d'un index.
     /// </summary>
     /// <typeparam name="TDocument">Type de document.</typeparam>
-    /// <param name="beans">Les clés composites.</param>
+    /// <param name="keys">Les clés composites.</param>
     /// <returns>ISearchBulkDescriptor.</returns>
-    ISearchBulkDescriptor DeleteMany<TDocument>(IEnumerable<TDocument> beans)
+    ISearchBulkDescriptor DeleteMany<TDocument>(IEnumerable<object> keys)
         where TDocument : class;
 
     /// <summary>

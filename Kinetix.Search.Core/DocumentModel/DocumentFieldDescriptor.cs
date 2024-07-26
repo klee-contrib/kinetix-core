@@ -6,34 +6,33 @@ namespace Kinetix.Search.Core.DocumentModel;
 /// <summary>
 /// Classe de description d'une propriété.
 /// </summary>
-[Serializable]
 public sealed class DocumentFieldDescriptor
 {
     /// <summary>
     /// Obtient le nom de la propriété.
     /// </summary>
-    public string PropertyName
+    public required string PropertyName
     {
         get;
-        internal set;
+        set;
     }
 
     /// <summary>
     /// Nom du champ dans le document (camel case).
     /// </summary>
-    public string FieldName
+    public required string FieldName
     {
         get;
-        internal set;
+        set;
     }
 
     /// <summary>
     /// Obtient le type de la propriété.
     /// </summary>
-    public Type PropertyType
+    public required Type PropertyType
     {
         get;
-        internal set;
+        set;
     }
 
     /// <summary>
@@ -42,7 +41,7 @@ public sealed class DocumentFieldDescriptor
     public SearchFieldCategory Category
     {
         get;
-        internal set;
+        set;
     }
 
     /// <summary>
@@ -51,7 +50,7 @@ public sealed class DocumentFieldDescriptor
     public SearchFieldIndexing Indexing
     {
         get;
-        internal set;
+        set;
     }
 
     /// <summary>
@@ -60,7 +59,7 @@ public sealed class DocumentFieldDescriptor
     public int PkOrder
     {
         get;
-        internal set;
+        set;
     }
 
     /// <summary>
@@ -69,7 +68,7 @@ public sealed class DocumentFieldDescriptor
     public bool IsPartialRebuildDate
     {
         get;
-        internal set;
+        set;
     }
 
     /// <summary>
@@ -78,7 +77,7 @@ public sealed class DocumentFieldDescriptor
     public bool IsMultiValued
     {
         get;
-        internal set;
+        set;
     }
 
     /// <summary>
@@ -87,34 +86,23 @@ public sealed class DocumentFieldDescriptor
     public double Boost
     {
         get;
-        internal set;
+        set;
     } = 1;
 
     /// <summary>
     /// Autres attributs sur le champ.
     /// </summary>
-    public List<object> OtherAttributes { get; set; }
+    public List<object> OtherAttributes { get; set; } = [];
 
     /// <summary>
     /// Retourne la valeur de la propriété pour un objet.
     /// </summary>
     /// <param name="bean">Objet.</param>
     /// <returns>Valeur.</returns>
-    public object GetValue(object bean)
+    public object? GetValue(object bean)
     {
-        var value = TypeDescriptor.GetProperties(bean)[PropertyName].GetValue(bean);
+        var value = TypeDescriptor.GetProperties(bean)[PropertyName]!.GetValue(bean);
         return value;
-    }
-
-    /// <summary>
-    /// Définit la valeur de la propriété pour un objet.
-    /// </summary>
-    /// <param name="bean">Objet.</param>
-    /// <param name="value">Valeur.</param>
-    public void SetValue(object bean, object value)
-    {
-        var descriptor = TypeDescriptor.GetProperties(bean)[PropertyName];
-        descriptor.SetValue(bean, value);
     }
 
     /// <summary>

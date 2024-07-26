@@ -1,4 +1,5 @@
-﻿using Kinetix.Search.Core.Querying;
+﻿using System.Diagnostics;
+using Kinetix.Search.Core.Querying;
 using Kinetix.Search.Models;
 
 namespace Kinetix.Search.Core;
@@ -55,7 +56,7 @@ public static class SearchStoreExtensions
     /// <returns>Résultat.</returns>
     public static (IEnumerable<TOutput> data, int totalCount) Query<TDocument, TCriteria, TOutput>(this ISearchStore store, TCriteria criteria, Func<TDocument, TOutput> documentMapper)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         return store.Query(null, criteria, documentMapper);
     }
@@ -69,7 +70,7 @@ public static class SearchStoreExtensions
     /// <returns>Résultat.</returns>
     public static (IEnumerable<TOutput> data, int totalCount) Query<TDocument, TCriteria, TOutput>(this ISearchStore store, TCriteria criteria, Func<TDocument, IReadOnlyDictionary<string, IReadOnlyCollection<string>>, TOutput> documentMapper)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         return store.Query(null, criteria, documentMapper);
     }
@@ -82,9 +83,9 @@ public static class SearchStoreExtensions
     /// <param name="criteria">Critère de recherche.</param>
     /// <param name="documentMapper">Mapper de document.</param>
     /// <returns>Résultat.</returns>
-    public static (IEnumerable<TOutput> data, int totalCount) Query<TDocument, TCriteria, TOutput>(this ISearchStore store, BasicQueryInput<TDocument> queryInput, TCriteria criteria, Func<TDocument, TOutput> documentMapper)
+    public static (IEnumerable<TOutput> data, int totalCount) Query<TDocument, TCriteria, TOutput>(this ISearchStore store, BasicQueryInput<TDocument>? queryInput, TCriteria criteria, Func<TDocument, TOutput> documentMapper)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         return store.Query(queryInput, criteria, (d, _) => documentMapper(d));
     }
@@ -97,9 +98,9 @@ public static class SearchStoreExtensions
     /// <param name="criteria">Critère de recherche.</param>
     /// <param name="documentMapper">Mapper de document.</param>
     /// <returns>Résultat.</returns>
-    public static (IEnumerable<TOutput> data, int totalCount) Query<TDocument, TCriteria, TOutput>(this ISearchStore store, BasicQueryInput<TDocument> queryInput, TCriteria criteria, Func<TDocument, IReadOnlyDictionary<string, IReadOnlyCollection<string>>, TOutput> documentMapper)
+    public static (IEnumerable<TOutput> data, int totalCount) Query<TDocument, TCriteria, TOutput>(this ISearchStore store, BasicQueryInput<TDocument>? queryInput, TCriteria criteria, Func<TDocument, IReadOnlyDictionary<string, IReadOnlyCollection<string>>, TOutput> documentMapper)
         where TDocument : class
-        where TCriteria : ICriteria, new()
+        where TCriteria : ICriteria
     {
         if (string.IsNullOrEmpty(criteria.Query))
         {
@@ -108,20 +109,20 @@ public static class SearchStoreExtensions
 
         var input = new AdvancedQueryInput<TDocument, TCriteria>
         {
-            SearchCriteria = new[]
-            {
+            SearchCriteria =
+            [
                 new QueryInput<TCriteria>
                 {
                     Criteria = criteria,
                     Skip = 0,
                     Top = queryInput?.Top ?? 10
                 }
-            },
+            ],
             Security = queryInput?.Security,
             AdditionalCriteria = queryInput?.Criteria
         };
 
         var output = store.AdvancedQuery(input, documentMapper);
-        return (output.List, output.TotalCount.Value);
+        return (output.List!, output.TotalCount);
     }
 }

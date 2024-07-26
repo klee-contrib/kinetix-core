@@ -11,15 +11,15 @@ public class FacetInput
     /// <summary>
     /// Opérateur utilisé entre les différentes valeurs ("and" ou "or").
     /// </summary>
-    public string Operator { get; set; }
+    public string? Operator { get; set; }
 
     /// <summary>
     /// Valeurs de la facette à prendre.
     /// </summary>
-    public IList<string> Selected { get; set; } = new List<string>();
+    public IList<string> Selected { get; set; } = [];
 
     /// <summary>
     /// Valeurs de la facette à exclure.
     /// </summary>
-    public IList<string> Excluded { get; set; } = new List<string>();
+    public IList<string> Excluded { get; set; } = [];
 }

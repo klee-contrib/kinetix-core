@@ -10,7 +10,7 @@ namespace Kinetix.Search.Core;
 /// </summary>
 /// <typeparam name="TDocument"></typeparam>
 public class IndexManager<TDocument>
-    where TDocument : class, new()
+    where TDocument : class
 {
     private readonly ILogger<IndexManager> _logger;
     private readonly IServiceProvider _provider;
@@ -38,28 +38,28 @@ public class IndexManager<TDocument>
     /// <summary>
     /// Marque un document pour suppression dans son index.
     /// </summary>
-    /// <typeparam name="TKey">Type de clé primaire.</typeparam>
     /// <param name="id">ID du document.</param>
     /// <returns>IndexManager.</returns>
     public IndexManager<TDocument> Delete<TKey>(TKey id)
+        where TKey : notnull
     {
         _logger.LogInformation($"RegisterDelete 1 {typeof(TDocument).Name}");
-        GetContext().RegisterDelete<TDocument, TKey>(id);
+        GetContext().RegisterDelete<TDocument>(id);
         return this;
     }
 
     /// <summary>
     /// Marque plusieurs documents pour suppression dans leur index.
     /// </summary>
-    /// <typeparam name="TKey">Type de clé primaire.</typeparam>
     /// <param name="ids">IDs des documents.</param>
     /// <returns>IndexManager.</returns>
     public IndexManager<TDocument> DeleteMany<TKey>(IEnumerable<TKey> ids)
+        where TKey : notnull
     {
         _logger.LogInformation($"RegisterDelete {ids.Count()} {typeof(TDocument).Name}");
         foreach (var id in ids)
         {
-            Delete(id);
+            GetContext().RegisterDelete<TDocument>(id);
         }
 
         return this;
@@ -68,28 +68,28 @@ public class IndexManager<TDocument>
     /// <summary>
     /// Marque un document pour (ré)indexation.
     /// </summary>
-    /// <typeparam name="TKey">Type de clé primaire.</typeparam>
     /// <param name="id">ID du document.</param>
     /// <returns>IndexManager.</returns>
     public IndexManager<TDocument> Index<TKey>(TKey id)
+        where TKey : notnull
     {
         _logger.LogInformation($"RegisterIndex 1 {typeof(TDocument).Name}");
-        GetContext().RegisterIndex<TDocument, TKey>(id);
+        GetContext().RegisterIndex<TDocument>(id);
         return this;
     }
 
     /// <summary>
     /// Marque plusieurs documents pour ré(indexation).
     /// </summary>
-    /// <typeparam name="TKey">Type de clé primaire.</typeparam>
     /// <param name="ids">IDs des documents.</param>
     /// <returns>IndexManager.</returns>
     public IndexManager<TDocument> IndexMany<TKey>(IEnumerable<TKey> ids)
+        where TKey : notnull
     {
         _logger.LogInformation($"RegisterIndex {ids.Count()} {typeof(TDocument).Name}");
         foreach (var id in ids)
         {
-            Index(id);
+            GetContext().RegisterIndex<TDocument>(id);
         }
 
         return this;
@@ -98,21 +98,19 @@ public class IndexManager<TDocument>
     /// <summary>
     /// Réinitialise un index.
     /// </summary>
-    /// <typeparam name="TKey">Type de clé primaire.</typeparam>
-    public IndexManager<TDocument> IndexAll<TKey>()
+    public IndexManager<TDocument> IndexAll()
     {
         _logger.LogInformation($"Reindex {typeof(TDocument).Name}");
-        GetContext().IndexAll<TDocument, TKey>();
+        GetContext().IndexAll<TDocument>();
         return this;
     }
 
     /// <summary>
     /// Reconstruit un index.
     /// </summary>
-    /// <typeparam name="TKey">Type de clé primaire.</typeparam>
     /// <param name="rebuildLogger">Logger custom pour suivre l'avancement de la réindexation.</param>
     /// <returns>Le nombre de documents.</returns>
-    public int RebuildIndex<TKey>(ILogger rebuildLogger = null)
+    public int RebuildIndex(ILogger? rebuildLogger = null)
     {
         using var tx = _transactionScopeManager.EnsureTransaction();
 
@@ -126,12 +124,11 @@ public class IndexManager<TDocument>
         }
 
         rebuildLogger?.LogInformation($"Loading data for index {indexName}...");
-        var documents = _provider.GetRequiredService<IDocumentLoader<TDocument, TKey>>().GetAll(!indexCreated);
+
+        var loader = _provider.GetRequiredService<IDocumentLoader<TDocument>>();
+
+        var documents = loader.GetAll(!indexCreated);
         rebuildLogger?.LogInformation($"Data for index {indexName} loaded.");
-        if (documents.TryGetNonEnumeratedCount(out var count))
-        {
-            rebuildLogger?.LogInformation($"{count} documents ready for indexation.");
-        }
 
         return _searchStore.ResetIndex(documents, !indexCreated, rebuildLogger);
     }

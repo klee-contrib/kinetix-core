@@ -8,7 +8,7 @@ public class BasicQueryInput<TDocument>
     /// <summary>
     /// Requête full text.
     /// </summary>
-    public string Query { get; set; }
+    public string? Query { get; set; }
 
     /// <summary>
     /// Nombre de résultats à retourner.
@@ -18,10 +18,10 @@ public class BasicQueryInput<TDocument>
     /// <summary>
     /// Filtrage de sécurité.
     /// </summary>
-    public string[] Security { get; set; }
+    public string[]? Security { get; set; }
 
     /// <summary>
     /// Filtres.
     /// </summary>
-    public TDocument Criteria { get; set; }
+    public TDocument? Criteria { get; set; }
 }

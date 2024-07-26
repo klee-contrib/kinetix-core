@@ -10,26 +10,26 @@ public class QueryOutput
     /// <summary>
     /// Groupe de liste de résultats.
     /// </summary>
-    public IList<GroupResult> Groups { get; set; }
+    public required IList<GroupResult>? Groups { get; set; }
 
     /// <summary>
     /// Facettes sélectionnées.
     /// </summary>
-    public IList<FacetOutput> Facets { get; set; }
+    public required IList<FacetOutput> Facets { get; set; }
 
     /// <summary>
     /// Nombre total d'éléments.
     /// </summary>
-    public long? TotalCount { get; set; }
+    public required long TotalCount { get; set; }
 
     /// <summary>
     /// Token retourné pour la pagination.
     /// </summary>
-    public string SkipToken { get; set; }
+    public string? SkipToken { get; set; }
 
     /// <summary>
     /// Conteneur d'agrégations.
     /// </summary>
     [JsonIgnore]
-    public object Aggregations { get; set; }
+    public object? Aggregations { get; set; }
 }

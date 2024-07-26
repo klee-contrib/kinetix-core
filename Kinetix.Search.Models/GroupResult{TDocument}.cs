@@ -10,7 +10,7 @@ public class GroupResult<TDocument>
     /// <summary>
     /// Code du groupe (= celui de la facette).
     /// </summary>
-    public string Code
+    public required string Code
     {
         get;
         set;
@@ -19,7 +19,7 @@ public class GroupResult<TDocument>
     /// <summary>
     /// Label du groupe (= celui de la facette)
     /// </summary>
-    public string Label
+    public required string Label
     {
         get;
         set;
@@ -28,7 +28,7 @@ public class GroupResult<TDocument>
     /// <summary>
     /// Liste d'éléments du groupe.
     /// </summary>
-    public ICollection<TDocument> List
+    public required ICollection<TDocument> List
     {
         get;
         set;
@@ -37,7 +37,7 @@ public class GroupResult<TDocument>
     /// <summary>
     /// Nombre d'éléments du groupe.
     /// </summary>
-    public int? TotalCount
+    public required int TotalCount
     {
         get;
         set;

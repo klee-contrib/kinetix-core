@@ -18,7 +18,7 @@ public class FacetQueryDefinition<TDocument>
     /// <summary>
     /// Libellé de la valeur de facette nulle.
     /// </summary>
-    public string FacetNullValueLabel
+    public string? FacetNullValueLabel
     {
         get;
         set;

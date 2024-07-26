@@ -53,7 +53,7 @@ public class IndexManager
     /// <typeparam name="TDocument">Type de document.</typeparam>
     /// <returns>IndexManager.</returns>
     public IndexManager<TDocument> For<TDocument>()
-        where TDocument : class, new()
+        where TDocument : class
     {
         return new IndexManager<TDocument>(_logger, _provider, _searchStore, _transactionScopeManager, _waitForRefresh);
     }

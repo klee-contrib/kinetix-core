@@ -40,7 +40,6 @@ public abstract class ReferenceFacet<TDocument> : TermFacet<TDocument>
 /// <typeparam name="TDocument">Type de document.</typeparam>
 /// <typeparam name="T">Type de la référence.</typeparam>
 public class ReferenceFacet<TDocument, T> : ReferenceFacet<TDocument>
-    where T : new()
 {
     private readonly IReferenceManager _referenceManager;
 
@@ -70,7 +69,7 @@ public class ReferenceFacet<TDocument, T> : ReferenceFacet<TDocument>
         return _referenceManager.GetReferenceList<T>()
             .Select(item => new FacetItem
             {
-                Code = def.PrimaryKey.GetValue(item).ToString(),
+                Code = def.PrimaryKey.GetValue(item).ToString()!,
                 Label = (string)def.DefaultProperty.GetValue(item),
                 Count = 0
             })

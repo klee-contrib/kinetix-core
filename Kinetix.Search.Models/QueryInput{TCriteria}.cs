@@ -5,27 +5,27 @@
 /// </summary>
 /// <typeparam name="TCriteria">Critère.</typeparam>
 public class QueryInput<TCriteria>
-    where TCriteria : ICriteria, new()
+    where TCriteria : ICriteria
 {
     /// <summary>
     /// Liste des facettes.
     /// </summary>
-    public Dictionary<string, FacetInput> Facets { get; set; } = new();
+    public Dictionary<string, FacetInput> Facets { get; set; } = [];
 
     /// <summary>
     /// Critères de recherche.
     /// </summary>
-    public TCriteria Criteria { get; set; } = new();
+    public TCriteria? Criteria { get; set; }
 
     /// <summary>
     /// Nom du champ pour grouper (parmi les noms de facettes).
     /// </summary>
-    public string Group { get; set; }
+    public string? Group { get; set; }
 
     /// <summary>
     /// Champ de tri.
     /// </summary>
-    public string SortFieldName { get; set; }
+    public string? SortFieldName { get; set; }
 
     /// <summary>
     /// Indique si le tri est descendant.
@@ -40,7 +40,7 @@ public class QueryInput<TCriteria>
     /// <summary>
     /// Token à utiliser pour la pagination (à la place de "skip").
     /// </summary>
-    public string SkipToken { get; set; }
+    public string? SkipToken { get; set; }
 
     /// <summary>
     /// Taille d'une page d'éléments.

@@ -7,7 +7,7 @@ namespace Kinetix.Search.Core;
 
 internal class IndexingTransactionContext : ITransactionContext
 {
-    private readonly Dictionary<(Type TDocument, Type TKey), IIndexingDocumentState> _indexors = new();
+    private readonly Dictionary<Type, IIndexingDocumentState> _indexors = [];
     private readonly IServiceProvider _provider;
 
     public IndexingTransactionContext(IServiceProvider provider)
@@ -31,7 +31,7 @@ internal class IndexingTransactionContext : ITransactionContext
     /// <inheritdoc cref="ITransactionContext.OnBeforeCommit" />
     public void OnBeforeCommit()
     {
-        if (Completed && _indexors.Any())
+        if (Completed && _indexors.Count != 0)
         {
             var searchStore = _provider.GetRequiredService<ISearchStore>();
             var transactionScopeManager = _provider.GetRequiredService<TransactionScopeManager>();
@@ -45,10 +45,10 @@ internal class IndexingTransactionContext : ITransactionContext
             {
                 foreach (var indexor in _indexors)
                 {
-                    logger.LogInformation($"Prepare {indexor.Key.TDocument.Name}");
-                    typeof(IndexingTransactionContext).GetMethod(nameof(PrepareBulkDescriptor), BindingFlags.Static | BindingFlags.NonPublic)
-                        .MakeGenericMethod(indexor.Key.TDocument, indexor.Key.TKey)
-                        .Invoke(null, new object[] { _provider, bulk, indexor.Value });
+                    logger.LogInformation($"Prepare {indexor.Key.Name}");
+                    typeof(IndexingTransactionContext).GetMethod(nameof(PrepareBulkDescriptor), BindingFlags.Static | BindingFlags.NonPublic)!
+                        .MakeGenericMethod(indexor.Key)
+                        .Invoke(null, [_provider, bulk, indexor.Value]);
                 }
 
                 bulk.Run(WaitForRefresh);
@@ -69,35 +69,35 @@ internal class IndexingTransactionContext : ITransactionContext
     {
     }
 
-    internal void IndexAll<TDocument, TKey>()
+    internal void IndexAll<TDocument>()
         where TDocument : class
     {
-        GetState<TDocument, TKey>().Reindex = true;
+        GetState<TDocument>().Reindex = true;
     }
 
-    internal bool RegisterDelete<TDocument, TKey>(TKey id)
+    internal bool RegisterDelete<TDocument>(object id)
         where TDocument : class
     {
-        return GetState<TDocument, TKey>().RegisterDelete(id);
+        return GetState<TDocument>().RegisterDelete(id);
     }
 
-    internal bool RegisterIndex<TDocument, TKey>(TKey id)
+    internal bool RegisterIndex<TDocument>(object id)
         where TDocument : class
     {
-        return GetState<TDocument, TKey>().RegisterIndex(id);
+        return GetState<TDocument>().RegisterIndex(id);
     }
 
-    private static ISearchBulkDescriptor PrepareBulkDescriptor<TDocument, TKey>(IServiceProvider provider, ISearchBulkDescriptor bulk, IIndexingDocumentState _state)
-        where TDocument : class, new()
+    private static ISearchBulkDescriptor PrepareBulkDescriptor<TDocument>(IServiceProvider provider, ISearchBulkDescriptor bulk, IIndexingDocumentState _state)
+        where TDocument : class
     {
-        var state = (IndexingDocumentState<TDocument, TKey>)_state;
+        var state = (IndexingDocumentState<TDocument>)_state;
 
-        var loader = provider.GetRequiredService<IDocumentLoader<TDocument, TKey>>();
+        var loader = provider.GetRequiredService<IDocumentLoader<TDocument>>();
 
         if (state.Reindex)
         {
             var docs = loader.GetAll(false).ToList();
-            return docs.Any()
+            return docs.Count != 0
                 ? bulk.IndexMany(docs)
                 : bulk;
         }
@@ -105,11 +105,11 @@ internal class IndexingTransactionContext : ITransactionContext
         {
             if (state.IdsToDelete.Count == 1)
             {
-                bulk.Delete(loader.FillDocumentWithKey(state.IdsToDelete.Single()));
+                bulk.Delete<TDocument>(state.IdsToDelete.Single());
             }
             else if (state.IdsToDelete.Count > 1)
             {
-                bulk.DeleteMany(state.IdsToDelete.Select(loader.FillDocumentWithKey));
+                bulk.DeleteMany<TDocument>(state.IdsToDelete);
             }
 
             if (state.IdsToIndex.Count == 1)
@@ -123,7 +123,8 @@ internal class IndexingTransactionContext : ITransactionContext
             else if (state.IdsToIndex.Count > 1)
             {
                 var docs = loader.GetMany(state.IdsToIndex).ToList();
-                if (docs.Any())
+
+                if (docs.Count != 0)
                 {
                     bulk.IndexMany(docs);
                 }
@@ -133,14 +134,14 @@ internal class IndexingTransactionContext : ITransactionContext
         }
     }
 
-    private IndexingDocumentState<TDocument, TKey> GetState<TDocument, TKey>()
+    private IndexingDocumentState<TDocument> GetState<TDocument>()
         where TDocument : class
     {
-        if (!_indexors.ContainsKey((typeof(TDocument), typeof(TKey))))
+        if (!_indexors.ContainsKey(typeof(TDocument)))
         {
-            _indexors.Add((typeof(TDocument), typeof(TKey)), new IndexingDocumentState<TDocument, TKey>());
+            _indexors.Add(typeof(TDocument), new IndexingDocumentState<TDocument>());
         }
 
-        return (IndexingDocumentState<TDocument, TKey>)_indexors[(typeof(TDocument), typeof(TKey))];
+        return (IndexingDocumentState<TDocument>)_indexors[typeof(TDocument)];
     }
 }

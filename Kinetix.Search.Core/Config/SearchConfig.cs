@@ -7,7 +7,7 @@ namespace Kinetix.Search.Core.Config;
 /// </summary>
 public class SearchConfig
 {
-    public Dictionary<string, SearchConfigItem> Servers { get; set; }
+    public Dictionary<string, SearchConfigItem> Servers { get; set; } = [];
 
     public int ClusterSize { get; set; } = 5000;
 

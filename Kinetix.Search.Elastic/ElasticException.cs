@@ -9,7 +9,7 @@ public class ElasticException : Exception
     /// <summary>
     /// Détails de l'appel ElasticSearch.
     /// </summary>
-    public string DebugInformation { get; set; }
+    public string? DebugInformation { get; set; }
 
     /// <summary>
     /// Crée un nouvelle exception.

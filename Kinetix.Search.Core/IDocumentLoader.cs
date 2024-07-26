@@ -1,41 +1,18 @@
-﻿using System.Reflection;
-using Kinetix.Search.Models.Annotations;
-
-namespace Kinetix.Search.Core;
+﻿namespace Kinetix.Search.Core;
 
 /// <summary>
 /// Contrat pour les loaders de documents pour indexation.
 /// </summary>
 /// <typeparam name="TDocument">Type de document.</typeparam>
-/// <typeparam name="TKey">Type de clé primaire</typeparam>
-public interface IDocumentLoader<TDocument, TKey>
-    where TDocument : class, new()
+public interface IDocumentLoader<TDocument>
+    where TDocument : class
 {
-    /// <summary>
-    /// Renseigne un document ES avec les champs qui constituent son Id.
-    /// </summary>
-    /// <param name="id">Id du document.</param>
-    /// <returns>Document ES avec les champs d'id renseignés.</returns>
-    TDocument FillDocumentWithKey(TKey id)
-    {
-        var doc = new TDocument();
-
-        var idProperties = typeof(TDocument).GetProperties().Where(p => p.GetCustomAttribute<SearchFieldAttribute>()?.Category == SearchFieldCategory.Id);
-        if (idProperties.Count() != 1 || !idProperties.Single().PropertyType.IsAssignableFrom(typeof(TKey)))
-        {
-            throw new NotImplementedException("Impossible de récupérer l'id du document automatiquement. Veuillez implémenter `FillDocumentWithKey`.");
-        }
-
-        idProperties.Single().SetValue(doc, id);
-        return doc;
-    }
-
     /// <summary>
     /// Charge un document pour indexation.
     /// </summary>
     /// <param name="id">Id du document.</param>
     /// <returns>Le document.</returns>
-    TDocument Get(TKey id);
+    TDocument Get(object id);
 
     /// <summary>
     /// Charge tous les documents pour indexation.
@@ -49,5 +26,43 @@ public interface IDocumentLoader<TDocument, TKey>
     /// </summary>
     /// <param name="ids">Ids des documents.</param>
     /// <returns>Les documents.</returns>
-    IEnumerable<TDocument> GetMany(IEnumerable<TKey> ids);
+    IEnumerable<TDocument> GetMany(IEnumerable<object> ids);
+}
+
+/// <summary>
+/// Implé abstraite de IDocumentLoader avec la clé primaire typée.
+/// </summary>
+/// <typeparam name="TDocument">Type de document.</typeparam>
+/// <typeparam name="TKey">Type de la clé primaire. Si la clé est composite, alors le type doit être un tuple avec les propriétés dans le bon ordre.</typeparam>
+public abstract class DocumentLoader<TDocument, TKey> : IDocumentLoader<TDocument>
+    where TDocument : class
+{
+    /// <inheritdoc cref="IDocumentLoader{TDocument}.Get" />
+    public TDocument Get(object id)
+    {
+        return Get((TKey)id);
+    }
+
+    /// <summary>
+    /// Charge un document pour indexation.
+    /// </summary>
+    /// <param name="id">Id du document.</param>
+    /// <returns>Le document.</returns>
+    public abstract TDocument Get(TKey id);
+
+    /// <inheritdoc cref="IDocumentLoader{TDocument}.GetAll" />
+    public abstract IEnumerable<TDocument> GetAll(bool partialRebuild);
+
+    /// <inheritdoc cref="IDocumentLoader{TDocument}.GetMany" />
+    public IEnumerable<TDocument> GetMany(IEnumerable<object> ids)
+    {
+        return GetMany(ids.Cast<TKey>());
+    }
+
+    /// <summary>
+    /// Charge plusieurs documents pour indexation.
+    /// </summary>
+    /// <param name="ids">Ids des documents.</param>
+    /// <returns>Les documents.</returns>
+    public abstract IEnumerable<TDocument> GetMany(IEnumerable<TKey> ids);
 }
