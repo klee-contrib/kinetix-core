@@ -45,7 +45,7 @@ public class DocumentPrimaryKeyDescriptor
 
         if (key is not ITuple tuple || tuple.Length > _fieldDescriptors.Count)
         {
-            throw new InvalidOperationException("La clé composite du document doit être un tuple.");
+            throw new InvalidOperationException("La clé du document doit être un tuple contenant au plus tous les champs de la clé composite.");
         }
 
         if (_fieldDescriptors.Any(f => f.PkOrder == 0))
@@ -53,6 +53,6 @@ public class DocumentPrimaryKeyDescriptor
             throw new InvalidOperationException("La propriété `PkOrder` doit être renseignée sur les ids de clé composite (à partir de 1).");
         }
 
-        return string.Join("__", _fieldDescriptors.Select(f => tuple.Length < f.PkOrder - 1 ? tuple[f.PkOrder - 1] : null).Where(v => v != null));
+        return string.Join("__", _fieldDescriptors.Select(f => f.PkOrder - 1 < tuple.Length ? tuple[f.PkOrder - 1] : null).Where(v => v != null));
     }
 }
