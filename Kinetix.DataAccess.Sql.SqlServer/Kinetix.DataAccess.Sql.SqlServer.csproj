@@ -10,7 +10,7 @@
 
   <PropertyGroup>
     <PackageOutputPath>../.nupkg</PackageOutputPath>
-    <Version>8.0.0</Version>
+    <Version>8.0.1</Version>
     <Authors>JabX</Authors>
     <Description>Module SQL Server pour l'ORM Kinetix.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>

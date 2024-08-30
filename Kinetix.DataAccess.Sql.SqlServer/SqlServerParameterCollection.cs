@@ -33,7 +33,7 @@ internal class SqlServerParameterCollection : SqlParameterCollection
     /// <summary>
     /// Taille du champ du type SQL Server dédié aux varchar.
     /// </summary>
-    private const int VarCharLength = 20;
+    private const int VarCharLength = 255;
 
     /// <summary>
     /// Constructeur.
