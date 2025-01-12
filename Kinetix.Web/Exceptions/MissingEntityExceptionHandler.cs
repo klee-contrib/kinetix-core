@@ -1,25 +1,38 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace Kinetix.Web.Exceptions;
 
 /// <summary>
 /// Handler par défaut pour les "Single" en erreur dans EF Core et "KeyNotFoundException".
 /// </summary>
-public class MissingEntityExceptionHandler : IKinetixExceptionHandler
+public class MissingEntityExceptionHandler(KinetixExceptionConfig config, ProblemDetailsFactory problemDetailsFactory) : IKinetixExceptionHandler
 {
     /// <inheritdoc />
     public int Priority => 1;
 
     /// <inheritdoc cref="IKinetixExceptionHandler.Handle" />
-    public ValueTask<IResult?> Handle(Exception exception)
+    public ValueTask<IResult?> Handle(Exception exception, HttpContext context)
     {
-        if (exception is not InvalidOperationException { Source: "Microsoft.EntityFrameworkCore" } and not KeyNotFoundException)
+        IResult? result = null;
+
+        if (exception is InvalidOperationException { Source: "Microsoft.EntityFrameworkCore" } or KeyNotFoundException)
         {
-            return ValueTask.FromResult<IResult?>(null);
+            var message = exception is KeyNotFoundException ke && ke.Message != new KeyNotFoundException().Message ? ke.Message : "L'objet demandé n'existe pas.";
+
+            if (config.Format == KinetixErrorFormat.Kinetix)
+            {
+                result = Results.NotFound(new KinetixErrorResponse { Errors = [message] });
+            }
+            else
+            {
+                result = Results.Problem(problemDetailsFactory.CreateProblemDetails(
+                    context,
+                    StatusCodes.Status404NotFound,
+                    detail: message));
+            }
         }
 
-        var message = exception is KeyNotFoundException ke && ke.Message != new KeyNotFoundException().Message ? ke.Message : "L'objet demandé n'existe pas.";
-
-        return ValueTask.FromResult<IResult?>(Results.NotFound(new KinetixErrorResponse { Errors = [message] }));
+        return ValueTask.FromResult(result);
     }
 }

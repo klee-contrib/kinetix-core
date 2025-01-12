@@ -17,7 +17,8 @@ public interface IKinetixExceptionHandler
     /// Gère une exception.
     /// </summary>
     /// <param name="exception">Exception.</param>
+    /// <param name="context">HttpContext.</param>
     /// <returns>Résultat si traité, null si ignoré.</returns>
-    ValueTask<IResult?> Handle(Exception exception);
+    ValueTask<IResult?> Handle(Exception exception, HttpContext context);
 }
 

@@ -39,11 +39,19 @@ public static class ConfigurationExtensions
     /// Vous pouvez créer vos propres handlers d'exception en enregistrant un service qui implémente <see cref="IKinetixExceptionHandler" />
     /// </summary>
     /// <param name="services">Services.</param>
+    /// <param name="config">Configuration.</param>
     /// <returns>Services.</returns>
-    public static IServiceCollection AddKinetixExceptionHandler(this IServiceCollection services)
+    public static IServiceCollection AddKinetixExceptionHandler(this IServiceCollection services, KinetixExceptionConfig? config = null)
     {
         return services
-            .AddProblemDetails()
+            .AddProblemDetails(o =>
+            {
+                if (config?.CustomizeProblemDetails != null)
+                {
+                    o.CustomizeProblemDetails = config.CustomizeProblemDetails;
+                }
+            })
+            .AddSingleton(config ?? new())
             .AddExceptionHandler<KinetixExceptionHandler>()
             .AddSingleton<IKinetixExceptionHandler, BusinessExceptionHandler>()
             .AddSingleton<IKinetixExceptionHandler, MissingEntityExceptionHandler>()
@@ -51,18 +59,19 @@ public static class ConfigurationExtensions
     }
 
     /// <summary>
-    /// Configure la sérialisation des erreurs de validation MVC pour être raccord avec les exceptions remontées.
+    /// Sérialise les erreurs de validation MVC comme des KinetixErrorResponse.<br /><br />
+    /// A utiliser avec un KinetixExceptionHandler configuré avec (la sérialisation par défaut utilise des ProblemDetails).
     /// </summary>
     /// <param name="builder">MvcBuilder.</param>
     /// <returns>MvcBuilder</returns>
-    public static IMvcBuilder ConfigureInvalidModelStateSerialization(this IMvcBuilder builder)
+    public static IMvcBuilder SerializeInvalidModelStateAsKinetixErrorResponse(this IMvcBuilder builder)
     {
         return builder.ConfigureApiBehaviorOptions(o =>
         {
             o.InvalidModelStateResponseFactory = context =>
                  new JsonResult(new KinetixErrorResponse
                  {
-                     Errors = context.ModelState.SelectMany(ms => ms.Value?.Errors ?? []).Select(e => e.ErrorMessage).ToArray()
+                     Errors = context.ModelState.SelectMany(field => (field.Value?.Errors ?? []).Select(error => $"{field.Key}: {error.ErrorMessage}")).ToArray()
                  })
                  { StatusCode = 400 };
         });
